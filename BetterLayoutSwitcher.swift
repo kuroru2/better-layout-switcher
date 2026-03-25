@@ -1,4 +1,5 @@
 import Cocoa
+import Carbon
 
 // --- Timing helper ---
 // Cache timebase info to avoid repeated syscalls
@@ -23,6 +24,64 @@ let tapThresholdMs: Double = 300.0
 
 // Global reference to event tap for re-enabling on timeout
 var globalEventTap: CFMachPort?
+
+// --- TIS Input Source helpers ---
+
+func getKeyboardInputSources() -> [TISInputSource] {
+    let conditions: CFDictionary = [
+        kTISPropertyInputSourceCategory as String: kTISCategoryKeyboardInputSource as Any,
+        kTISPropertyInputSourceIsEnabled as String: true as Any,
+        kTISPropertyInputSourceIsSelectCapable as String: true as Any
+    ] as CFDictionary
+
+    guard let sourceList = TISCreateInputSourceList(conditions, false)?.takeRetainedValue() as? [TISInputSource] else {
+        return []
+    }
+    return sourceList
+}
+
+func getInputSourceShortName(_ source: TISInputSource) -> String {
+    guard let langs = TISGetInputSourceProperty(source, kTISPropertyInputSourceLanguages) else {
+        return "??"
+    }
+    let languages = Unmanaged<CFArray>.fromOpaque(langs).takeUnretainedValue() as! [String]
+    return languages.first?.prefix(2).uppercased() ?? "??"
+}
+
+func getInputSourceID(_ source: TISInputSource) -> String {
+    guard let idPtr = TISGetInputSourceProperty(source, kTISPropertyInputSourceID) else {
+        return "unknown"
+    }
+    return Unmanaged<CFString>.fromOpaque(idPtr).takeUnretainedValue() as String
+}
+
+func switchToNextLayout() {
+    let sources = getKeyboardInputSources()
+    if sources.count < 2 {
+        print("⚠️  Less than 2 input sources enabled. Nothing to switch.")
+        return
+    }
+
+    guard let current = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+        print("⚠️  Could not get current input source")
+        return
+    }
+    let currentID = getInputSourceID(current)
+
+    let currentIndex = sources.firstIndex(where: { getInputSourceID($0) == currentID }) ?? 0
+    let nextIndex = (currentIndex + 1) % sources.count
+    let nextSource = sources[nextIndex]
+
+    let status = TISSelectInputSource(nextSource)
+    let name = getInputSourceShortName(nextSource)
+    if status == noErr {
+        print("🔄 Switched to: \(name) (\(getInputSourceID(nextSource)))")
+    } else {
+        print("❌ TISSelectInputSource failed with status: \(status)")
+    }
+}
+
+// --- Event callback ---
 
 func eventCallback(
     proxy: CGEventTapProxy,
@@ -58,7 +117,10 @@ func eventCallback(
             print("🔼 Fn UP (held \(String(format: "%.0f", elapsed))ms, otherKey: \(otherKeyPressed))")
 
             if elapsed < tapThresholdMs && !otherKeyPressed {
-                print("✅ Fn TAP detected — would switch layout here")
+                print("✅ Fn TAP detected")
+                DispatchQueue.main.async {
+                    switchToNextLayout()
+                }
                 // Suppress the Fn release event so macOS doesn't act on it
                 fnIsDown = false
                 otherKeyPressed = false
@@ -110,4 +172,17 @@ print("✅ Fn tap detector running (threshold: \(tapThresholdMs)ms)")
 print("   Press Fn quickly = tap | Hold Fn + other key = modifier")
 print("   Ctrl+C to quit")
 
-CFRunLoopRun()
+let sources = getKeyboardInputSources()
+print("📋 Available keyboard layouts:")
+for (i, source) in sources.enumerated() {
+    let name = getInputSourceShortName(source)
+    let id = getInputSourceID(source)
+    print("   [\(i)] \(name) — \(id)")
+}
+if sources.count < 2 {
+    print("⚠️  Need at least 2 input sources for switching!")
+}
+
+let app = NSApplication.shared
+app.setActivationPolicy(.accessory)  // No dock icon
+app.run()
