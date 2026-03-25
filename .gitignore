@@ -1,10 +1,20 @@
-# Build artifacts
-BetterLayoutSwitcher
-*.o
-*.swp
+# SPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
 
 # macOS
 .DS_Store
+
+# Old binaries
+FnSwitch
+BetterLayoutSwitcher
 
 # Superpowers
 .superpowers/
