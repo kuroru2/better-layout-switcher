@@ -12,7 +12,7 @@ Migrate the PoC to a Swift Package Manager project with split source files, Swif
 
 ### Delivers
 
-1. **SPM project** — `Package.swift` with executable target and test target
+1. **SPM project** — `Package.swift` with executable target (test target added later when testable logic exists)
 2. **File split** — 5 focused source files from the single PoC file
 3. **SwiftLint** — linter config with sensible defaults
 4. **Lefthook** — pre-commit hooks (SwiftLint + build), pre-push hooks (tests)
@@ -85,10 +85,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusBar = StatusBarController()
         detector.onTap = { [self] in
-            LayoutManager.switchToNext()
-            osd.show(text: LayoutManager.currentShortName)
-            statusBar.updateTitle()
+            if let name = LayoutManager.switchToNext() {
+                print("Switched to: \(name)")
+                osd.show(text: name)
+                statusBar.updateTitle()
+            }
         }
+        LayoutManager.printAvailableSources()
         detector.start()
     }
 }
@@ -141,12 +144,9 @@ pre-commit:
       run: swiftlint lint --strict
     build:
       run: swift build
-
-pre-push:
-  commands:
-    test:
-      run: swift test
 ```
+
+No `pre-push` hook until a test target is added.
 
 ### .gitignore
 
