@@ -1,0 +1,18 @@
+excluded:
+  - .build
+  - Package.swift
+
+disabled_rules:
+  - type_body_length
+  - trailing_whitespace
+
+line_length:
+  warning: 150
+  error: 200
+
+file_length:
+  warning: 400
+  error: 600
+
+identifier_name:
+  min_length: 1
