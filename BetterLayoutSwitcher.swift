@@ -75,7 +75,7 @@ func switchToNextLayout() {
     let status = TISSelectInputSource(nextSource)
     let name = getInputSourceShortName(nextSource)
     if status == noErr {
-        print("🔄 Switched to: \(name) (\(getInputSourceID(nextSource)))")
+        print("Switched to: \(name)")
         osd.show(text: name)
         statusBar.updateTitle()
     } else {
@@ -241,14 +241,11 @@ func eventCallback(
             fnIsDown = true
             otherKeyPressed = false
             fnDownTimestamp = mach_absolute_time()
-            print("🔽 Fn DOWN")
         } else if !fnNowSet && fnWasSet {
             // Fn released
             let elapsed = machToMs(mach_absolute_time() - fnDownTimestamp)
-            print("🔼 Fn UP (held \(String(format: "%.0f", elapsed))ms, otherKey: \(otherKeyPressed))")
 
             if elapsed < tapThresholdMs && !otherKeyPressed {
-                print("✅ Fn TAP detected")
                 DispatchQueue.main.async {
                     switchToNextLayout()
                 }
@@ -257,8 +254,6 @@ func eventCallback(
                 otherKeyPressed = false
                 previousFlags = currentFlags
                 return nil
-            } else {
-                print("⏭️  Fn modifier use — ignoring")
             }
             fnIsDown = false
             otherKeyPressed = false
@@ -268,8 +263,6 @@ func eventCallback(
     } else if type == .keyDown || type == .keyUp {
         if fnIsDown {
             otherKeyPressed = true
-            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-            print("⌨️  Key \(type == .keyDown ? "down" : "up") (code: \(keyCode)) while Fn held")
         }
     }
 

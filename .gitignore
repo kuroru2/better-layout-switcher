@@ -1,0 +1,10 @@
+# Build artifacts
+BetterLayoutSwitcher
+*.o
+*.swp
+
+# macOS
+.DS_Store
+
+# Superpowers
+.superpowers/
