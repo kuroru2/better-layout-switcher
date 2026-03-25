@@ -77,6 +77,7 @@ func switchToNextLayout() {
     if status == noErr {
         print("🔄 Switched to: \(name) (\(getInputSourceID(nextSource)))")
         osd.show(text: name)
+        statusBar.updateTitle()
     } else {
         print("❌ TISSelectInputSource failed with status: \(status)")
     }
@@ -178,6 +179,38 @@ class OSDWindow {
 }
 
 let osd = OSDWindow()
+
+// --- Menu Bar Status Item ---
+
+class StatusBarController {
+    private var statusItem: NSStatusItem
+
+    init() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        if let button = statusItem.button {
+            button.title = currentLayoutShortName()
+            button.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        }
+
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Quit Better Layout Switcher", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        statusItem.menu = menu
+    }
+
+    func updateTitle() {
+        statusItem.button?.title = currentLayoutShortName()
+    }
+}
+
+func currentLayoutShortName() -> String {
+    guard let current = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+        return "??"
+    }
+    return getInputSourceShortName(current)
+}
+
+var statusBar: StatusBarController!
 
 // --- Event callback ---
 
@@ -283,4 +316,5 @@ if sources.count < 2 {
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)  // No dock icon
+statusBar = StatusBarController()
 app.run()
