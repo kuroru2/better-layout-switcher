@@ -13,8 +13,8 @@ DerivedData/
 .DS_Store
 
 # Old binaries
-FnSwitch
-BetterLayoutSwitcher
+/FnSwitch
+/BetterLayoutSwitcher
 
 # Superpowers
 .superpowers/

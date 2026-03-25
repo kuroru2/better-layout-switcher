@@ -45,8 +45,27 @@ class FnTapDetector {
             userInfo: nil
         ) else {
             print("❌ Failed to create event tap. Grant Accessibility permission.")
-            print("   System Settings → Privacy & Security → Accessibility")
-            exit(1)
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = "Accessibility Permission Required"
+                alert.informativeText = """
+                    FnSwitch needs Accessibility permission to detect Fn key presses.
+
+                    Go to System Settings → Privacy & Security → Accessibility \
+                    and add FnSwitch to the list.
+                    """
+                alert.alertStyle = .critical
+                alert.addButton(withTitle: "Open System Settings")
+                alert.addButton(withTitle: "Quit")
+
+                if alert.runModal() == .alertFirstButtonReturn {
+                    NSWorkspace.shared.open(URL(
+                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                    )!)
+                }
+                NSApplication.shared.terminate(nil)
+            }
+            return
         }
 
         FnTapDetector.globalEventTap = eventTap
