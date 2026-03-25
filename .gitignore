@@ -18,3 +18,8 @@ BetterLayoutSwitcher
 
 # Superpowers
 .superpowers/
+
+# Build output
+FnSwitch.app/
+*.dmg
+build/

@@ -16,21 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build (Release)
-        run: swift build -c release
+      - name: Build app bundle
+        run: scripts/package-app.sh
 
-      - name: Package binary
-        run: |
-          mkdir -p staging
-          cp .build/release/FnSwitch staging/
-          cd staging
-          zip -r "$GITHUB_WORKSPACE/FnSwitch-macOS.zip" FnSwitch
+      - name: Package DMG
+        run: scripts/package-dmg.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: FnSwitch-macOS
-          path: FnSwitch-macOS.zip
+          path: FnSwitch-macOS.dmg
 
   release:
     needs: build
@@ -52,4 +48,4 @@ jobs:
           name: FnSwitch v${{ steps.version.outputs.version }}
           draft: false
           generate_release_notes: true
-          files: FnSwitch-macOS.zip
+          files: FnSwitch-macOS.dmg
