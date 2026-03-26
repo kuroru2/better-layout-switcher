@@ -19,39 +19,26 @@ trap 'rm -rf "$WORK"' EXIT
 
 echo "Processing $INPUT..."
 
-# Step 1: Trim whitespace/transparent edges, make square 1024x1024
-magick "$INPUT" -trim +repage \
-  -gravity center -background none -extent 1024x1024 \
+# Step 1: Resize to square 1024x1024 (fill, crop center if not square)
+magick "$INPUT" \
+  -resize 1024x1024^ \
+  -gravity center -extent 1024x1024 \
   "$WORK/source-1024.png"
 
-# Step 2: Create the macOS squircle mask
-# macOS uses a continuous curvature shape (squircle), not a simple rounded rect.
-# We approximate it with SVG's smoothly curved path at 1024x1024.
+# Step 2: Apply the macOS squircle mask.
+# macOS uses a continuous curvature shape (superellipse / squircle).
+# We use a rounded rect with large radius as an approximation.
+# The mask covers the full 1024x1024 — the source image should fill the frame.
 cat > "$WORK/mask.svg" << 'SVG'
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
-  <path d="
-    M 512 0
-    C 776 0, 880 0, 944 40
-    C 984 64, 1000 100, 1014 148
-    C 1024 184, 1024 248, 1024 512
-    C 1024 776, 1024 840, 1014 876
-    C 1000 924, 984 960, 944 984
-    C 880 1024, 776 1024, 512 1024
-    C 248 1024, 144 1024, 80 984
-    C 40 960, 24 924, 10 876
-    C 0 840, 0 776, 0 512
-    C 0 248, 0 184, 10 148
-    C 24 100, 40 64, 80 40
-    C 144 0, 248 0, 512 0
-    Z
-  " fill="white"/>
+  <rect x="0" y="0" width="1024" height="1024"
+        rx="225" ry="225" fill="white"/>
 </svg>
 SVG
 
-# Convert SVG mask to PNG
 magick "$WORK/mask.svg" -resize 1024x1024 "$WORK/mask.png"
 
-# Step 3: Apply mask to source image
+# Apply mask — areas outside the squircle become transparent
 magick "$WORK/source-1024.png" "$WORK/mask.png" \
   -alpha off -compose CopyOpacity -composite \
   "$WORK/icon-1024.png"
