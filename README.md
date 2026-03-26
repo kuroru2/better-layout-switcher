@@ -1,5 +1,9 @@
 # FnSwitch
 
+<p align="center">
+  <img src="docs/icon.png" width="128" height="128" alt="FnSwitch icon">
+</p>
+
 A lightweight macOS keyboard layout switcher that lives in your menu bar. Switches layouts with a quick Fn key tap, shows a consistent OSD every time.
 
 Built with Swift and AppKit. macOS 14+ (Sonoma).
@@ -15,6 +19,7 @@ macOS Fn-based layout switching is unreliable on macOS 15 — the key often requ
 - **Consistent OSD** — always shows layout name centered on screen
 - **Menu bar app** — runs in the background, current layout shown in tray
 - **Configurable threshold** — 300ms tap detection (hardcoded for now)
+- **Launch at Login** — toggle from menu bar dropdown
 
 ## Install
 
@@ -47,6 +52,14 @@ swift build
 scripts/package-app.sh    # → build/FnSwitch.app
 scripts/package-dmg.sh    # → FnSwitch-macOS.dmg
 ```
+
+### Icon
+
+```bash
+scripts/make-icon.sh <image.png> [crop-size]
+```
+
+Crops center square from source image, applies macOS rounded-rect mask with smooth anti-aliased edges, generates `.icns` with all required sizes. Optional `crop-size` (pixels) controls how tight the crop is (default: 80% of smaller dimension).
 
 ### Release
 

@@ -1,20 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./scripts/make-icon.sh <input-image>
-# Converts any image to a proper macOS .icns with transparent corners.
+# Usage: ./scripts/make-icon.sh <input-image> [crop-size]
+# Converts any image to a proper macOS .icns.
+# Crops a square from center, applies rounded-rect mask, generates all sizes.
+# Optional crop-size (default: 80% of smaller dimension) controls how tight the crop is.
 # Outputs to Resources/AppIcon.icns
-#
-# The script:
-# 1. Makes the image square (1024x1024)
-# 2. Flood-fills corners to remove background (handles gradients)
-# 3. Applies macOS rounded-rect mask for clean edges
-# 4. Generates all required icon sizes using magick (not sips, which drops alpha)
-# 5. Converts to .icns via iconutil
 
 INPUT="${1:-}"
 if [[ -z "$INPUT" || ! -f "$INPUT" ]]; then
-  echo "Usage: $0 <input-image.png>"
+  echo "Usage: $0 <input-image.png> [crop-size-px]"
   exit 1
 fi
 
@@ -26,49 +21,38 @@ trap 'rm -rf "$WORK"' EXIT
 
 echo "Processing $INPUT..."
 
-# Step 1: Make square 1024x1024
+# Get source dimensions
+read -r W H <<< "$(magick identify -format "%w %h" "$INPUT")"
+SMALLER=$((W < H ? W : H))
+
+# Crop size: use argument or default to 80% of smaller dimension
+CROP="${2:-$((SMALLER * 80 / 100))}"
+echo "  Source: ${W}x${H}, cropping center ${CROP}x${CROP}"
+
+# Step 1: Crop center square, scale to 4096 for high-res masking
 magick "$INPUT" \
-  -resize 1024x1024^ \
-  -gravity center -extent 1024x1024 \
-  "$WORK/square.png"
+  -gravity center -crop "${CROP}x${CROP}+0+0" +repage \
+  -resize 4096x4096 \
+  "$WORK/sq.png"
 
-# Step 2: Remove background from corners using flood-fill.
-# Use 20% fuzz to handle gradient backgrounds.
-# Flood-fill from all four corners + midpoints of edges to catch gradients.
-magick "$WORK/square.png" \
-  -alpha set \
-  -fuzz 20% \
-  -fill none \
-  -draw "color 0,0 floodfill" \
-  -draw "color 1023,0 floodfill" \
-  -draw "color 0,1023 floodfill" \
-  -draw "color 1023,1023 floodfill" \
-  -draw "color 512,0 floodfill" \
-  -draw "color 512,1023 floodfill" \
-  -draw "color 0,512 floodfill" \
-  -draw "color 1023,512 floodfill" \
-  "$WORK/nobg.png"
-
-# Step 3: Apply macOS rounded-rect mask for clean edges.
+# Step 2: Rounded-rect mask at 4096px (anti-aliased)
 cat > "$WORK/mask.svg" << 'SVG'
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
-  <rect x="0" y="0" width="1024" height="1024"
-        rx="225" ry="225" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="4096" height="4096">
+  <rect x="0" y="0" width="4096" height="4096" fill="black"/>
+  <rect x="0" y="0" width="4096" height="4096" rx="900" ry="900" fill="white"/>
 </svg>
 SVG
 
-magick "$WORK/mask.svg" -background none -resize 1024x1024! "$WORK/mask.png"
+magick "$WORK/mask.svg" "$WORK/mask.png"
 
-# Composite: use mask as alpha channel on the background-removed image
-magick "$WORK/nobg.png" \( "$WORK/mask.png" -alpha extract \) \
-  -compose DstIn -composite \
-  "$WORK/final-1024.png"
+# Step 3: Apply mask — white=keep, black=transparent
+magick "$WORK/sq.png" "$WORK/mask.png" -alpha off -compose CopyOpacity -composite "$WORK/final.png"
 
-# Step 4: Generate all iconset sizes using magick (preserves alpha, unlike sips)
+# Step 4: Generate all icon sizes with Lanczos downscale
 ICONSET="$WORK/AppIcon.iconset"
 mkdir -p "$ICONSET"
 
-gen() { magick "$WORK/final-1024.png" -resize "${1}x${1}" "$ICONSET/${2}.png"; }
+gen() { magick "$WORK/final.png" -filter Lanczos -resize "${1}x${1}" "$ICONSET/${2}.png"; }
 
 gen 16   icon_16x16
 gen 32   icon_16x16@2x
@@ -85,6 +69,4 @@ gen 1024 icon_512x512@2x
 mkdir -p Resources
 iconutil -c icns "$ICONSET" -o Resources/AppIcon.icns
 
-# Verify transparency
-CORNER=$(magick Resources/AppIcon.icns[0] -format "%[pixel:p{0,0}]" info: 2>/dev/null || echo "unknown")
-echo "✅ Icon saved to Resources/AppIcon.icns (corner pixel: $CORNER)"
+echo "✅ Icon saved to Resources/AppIcon.icns"
