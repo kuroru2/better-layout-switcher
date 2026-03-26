@@ -46,7 +46,14 @@ SVG
 magick "$WORK/mask.svg" "$WORK/mask.png"
 
 # Step 3: Apply mask — white=keep, black=transparent
-magick "$WORK/sq.png" "$WORK/mask.png" -alpha off -compose CopyOpacity -composite "$WORK/final.png"
+magick "$WORK/sq.png" "$WORK/mask.png" -alpha off -compose CopyOpacity -composite "$WORK/masked.png"
+
+# Step 4: Add padding — Apple guidelines require ~10% margin on each side.
+# Scale content to 3280x3280 (80% of 4096) and center on 4096x4096 transparent canvas.
+magick "$WORK/masked.png" \
+  -resize 3280x3280 \
+  -gravity center -background none -extent 4096x4096 \
+  "$WORK/final.png"
 
 # Step 4: Generate all icon sizes with Lanczos downscale
 ICONSET="$WORK/AppIcon.iconset"
