@@ -3,10 +3,11 @@ import Cocoa
 class AppDelegate: NSObject, NSApplicationDelegate {
     let detector = FnTapDetector()
     let osd = OSDWindow()
+    let xdr = XDRBoostController()
     var statusBar: StatusBarController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        statusBar = StatusBarController()
+        statusBar = StatusBarController(xdr: xdr)
 
         detector.onTap = { [self] in
             if let name = LayoutManager.switchToNext() {

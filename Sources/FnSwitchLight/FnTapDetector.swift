@@ -49,10 +49,10 @@ class FnTapDetector {
                 let alert = NSAlert()
                 alert.messageText = "Accessibility Permission Required"
                 alert.informativeText = """
-                    FnSwitch needs Accessibility permission to detect Fn key presses.
+                    FnSwitchLight needs Accessibility permission to detect Fn key presses.
 
                     Go to System Settings → Privacy & Security → Accessibility \
-                    and add FnSwitch to the list.
+                    and add FnSwitchLight to the list.
                     """
                 alert.alertStyle = .critical
                 alert.addButton(withTitle: "Open System Settings")
@@ -74,7 +74,7 @@ class FnTapDetector {
         CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: eventTap, enable: true)
 
-        print("✅ FnSwitch running (tap threshold: \(FnTapDetector.tapThresholdMs)ms)")
+        print("✅ FnSwitchLight running (tap threshold: \(FnTapDetector.tapThresholdMs)ms)")
     }
 
     // --- C-compatible static callback ---
