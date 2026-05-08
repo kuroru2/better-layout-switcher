@@ -16,7 +16,11 @@ let package = Package(
                 .linkedFramework("AVKit"),
                 .linkedFramework("CoreVideo"),
                 .linkedFramework("CoreMedia"),
-                .linkedFramework("QuartzCore")
+                .linkedFramework("QuartzCore"),
+                .unsafeFlags([
+                    "-F/System/Library/PrivateFrameworks",
+                    "-framework", "DisplayServices"
+                ])
             ]
         )
     ]
