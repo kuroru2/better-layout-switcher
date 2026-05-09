@@ -41,12 +41,37 @@ class StatusBarController {
 
         menu.addItem(NSMenuItem.separator())
 
+        // Settings submenu — feature toggles for users who only want one
+        // half of what the app does.
+        let settingsItem = NSMenuItem(title: "Settings", action: nil, keyEquivalent: "")
+        let settingsMenu = NSMenu()
+        let langItem = NSMenuItem(
+            title: "Language Switch (Fn key)",
+            action: #selector(toggleLanguageSwitch),
+            keyEquivalent: ""
+        )
+        langItem.target = self
+        langItem.state = Settings.languageSwitchEnabled ? .on : .off
+        languageSwitchItem = langItem
+        settingsMenu.addItem(langItem)
+        settingsItem.submenu = settingsMenu
+        menu.addItem(settingsItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         menu.addItem(NSMenuItem(
-            title: "Quit FnSwitchLight",
+            title: "Quit FnLightSwitch",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
         statusItem.menu = menu
+    }
+
+    private var languageSwitchItem: NSMenuItem!
+
+    @objc private func toggleLanguageSwitch() {
+        Settings.languageSwitchEnabled.toggle()
+        languageSwitchItem.state = Settings.languageSwitchEnabled ? .on : .off
     }
 
     func updateTitle() {

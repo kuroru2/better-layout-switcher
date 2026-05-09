@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "FnSwitchLight",
+    name: "FnLightSwitch",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "FnSwitchLight",
-            path: "Sources/FnSwitchLight",
+            name: "FnLightSwitch",
+            path: "Sources/FnLightSwitch",
             exclude: ["Resources"],
             linkerSettings: [
                 .linkedFramework("Carbon"),
@@ -16,7 +16,11 @@ let package = Package(
                 .linkedFramework("AVKit"),
                 .linkedFramework("CoreVideo"),
                 .linkedFramework("CoreMedia"),
-                .linkedFramework("QuartzCore")
+                .linkedFramework("QuartzCore"),
+                .unsafeFlags([
+                    "-F/System/Library/PrivateFrameworks",
+                    "-framework", "DisplayServices"
+                ])
             ]
         )
     ]

@@ -24,6 +24,20 @@ final class XDRBoostController {
     static let maxLevel: Double = 2.0
     static let defaultLevel: Double = 1.3
 
+    /// Set on launch by the AppDelegate; used by AppIntent / Shortcuts
+    /// integration in `XDRBoostIntents.swift` to reach the live controller.
+    static weak var shared: XDRBoostController?
+
+    /// On-screen indicator shown when boost steps via F1/F2.
+    var osd: XDROSDWindow?
+
+    /// Step size used by F1/F2 / Shortcuts increase-decrease intents.
+    static let stepSize: Double = 0.1
+
+    /// Threshold for "user is at max system brightness" — at or above this,
+    /// pressing brightness-up takes over and steps XDR boost instead.
+    private static let maxSystemBrightnessThreshold: Float = 0.999
+
     private static let enabledKey = "xdrBoostEnabled"
     private static let levelKey = "xdrBoostLevel"
 
@@ -103,6 +117,48 @@ final class XDRBoostController {
         if isEnabled {
             for id in pins.keys { applyGammaBoost(displayID: id, factor: Float(level)) }
         }
+    }
+
+    /// Called by `XDRKeyTap` when user presses brightness-up. Returns
+    /// `true` if we consumed the event (we stepped boost instead of letting
+    /// macOS do its native brightness adjustment), `false` otherwise.
+    @discardableResult
+    func handleBrightnessUpKey() -> Bool {
+        // Gate: only take over when boost is enabled AND user is already at
+        // max system brightness — matches Vivid's UX exactly. Below max, we
+        // let the native system handle the key.
+        guard isEnabled, isUserAtMaxBrightness() else { return false }
+        guard level < Self.maxLevel else {
+            // Already at max — show OSD anyway to give feedback, consume.
+            osd?.show(level: level, maxLevel: Self.maxLevel)
+            return true
+        }
+        setLevel(level + Self.stepSize)
+        osd?.show(level: level, maxLevel: Self.maxLevel)
+        return true
+    }
+
+    /// Symmetric to handleBrightnessUpKey: only steps boost down if we're
+    /// already in boosted territory (level > 1.0). At level 1.0 we let the
+    /// native system handle the key (user wants to dim system brightness).
+    @discardableResult
+    func handleBrightnessDownKey() -> Bool {
+        guard isEnabled, level > Self.minLevel else { return false }
+        setLevel(level - Self.stepSize)
+        osd?.show(level: level, maxLevel: Self.maxLevel)
+        return true
+    }
+
+    private func isUserAtMaxBrightness() -> Bool {
+        // Any display being at max counts as "at max". On a single-display
+        // setup this is just the main display.
+        for screen in NSScreen.screens {
+            guard let id = displayID(of: screen) else { continue }
+            var br: Float = 0
+            _ = DisplayServicesGetBrightness(id, &br)
+            if br >= Self.maxSystemBrightnessThreshold { return true }
+        }
+        return false
     }
 
     /// Multiply the cached *baseline* gamma table by `factor` and write it
