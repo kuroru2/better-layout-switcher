@@ -155,7 +155,7 @@ final class XDRBoostController {
         for screen in NSScreen.screens {
             guard let id = displayID(of: screen) else { continue }
             var br: Float = 0
-            _ = DisplayServicesGetBrightness(id, &br)
+            _ = displayServicesGetBrightness(id, &br)
             if br >= Self.maxSystemBrightnessThreshold { return true }
         }
         return false
