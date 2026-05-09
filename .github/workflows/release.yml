@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: Build FnSwitch
+    name: Build FnLightSwitch
     runs-on: macos-15
 
     steps:
@@ -19,14 +19,21 @@ jobs:
       - name: Build app bundle
         run: scripts/package-app.sh
 
+      - name: Sign app (adhoc + hardened runtime + entitlements)
+        run: |
+          codesign --force --sign - \
+            --entitlements scripts/FnLightSwitch.entitlements \
+            --options runtime \
+            build/FnLightSwitch.app
+
       - name: Package DMG
         run: scripts/package-dmg.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FnSwitch-macOS
-          path: FnSwitch-macOS.dmg
+          name: FnLightSwitch-macOS
+          path: FnLightSwitch-macOS.dmg
 
   release:
     needs: build
@@ -35,17 +42,30 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: FnSwitch-macOS
+          name: FnLightSwitch-macOS
 
       - name: Get version from tag
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
+      - name: SHA256 of DMG (for Homebrew Cask)
+        id: sha
+        run: |
+          shasum -a 256 FnLightSwitch-macOS.dmg
+          SHA=$(shasum -a 256 FnLightSwitch-macOS.dmg | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: FnSwitch v${{ steps.version.outputs.version }}
+          name: FnLightSwitch v${{ steps.version.outputs.version }}
           draft: false
           generate_release_notes: true
-          files: FnSwitch-macOS.dmg
+          body: |
+            **Homebrew Cask** (`Casks/fnlightswitch.rb`):
+            ```
+            version "${{ steps.version.outputs.version }}"
+            sha256 "${{ steps.sha.outputs.sha256 }}"
+            ```
+          files: FnLightSwitch-macOS.dmg
