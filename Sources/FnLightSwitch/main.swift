@@ -9,11 +9,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBar: StatusBarController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UserDefaults.standard.register(defaults: Settings.defaults)
+
         XDRBoostController.shared = xdr
         xdr.osd = xdrOSD
         statusBar = StatusBarController(xdr: xdr)
 
         detector.onTap = { [self] in
+            guard Settings.languageSwitchEnabled else { return }
             if let name = LayoutManager.switchToNext() {
                 print("Switched to: \(name)")
                 osd.show(text: name)

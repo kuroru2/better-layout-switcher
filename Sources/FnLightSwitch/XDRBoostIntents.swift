@@ -4,7 +4,7 @@ import Foundation
 /// macOS Shortcuts integration for XDR Boost.
 ///
 /// Each `AppIntent` here shows up in Shortcuts.app as an action under
-/// "FnSwitchLight". Users can wire them into Shortcuts of their own
+/// "FnLightSwitch". Users can wire them into Shortcuts of their own
 /// (e.g., bind to a hotkey via Shortcuts, trigger via Stream Deck,
 /// chain with other automations).
 
@@ -13,7 +13,7 @@ private enum IntentError: Error, CustomLocalizedStringResourceConvertible {
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
-        case .controllerUnavailable: return "FnSwitchLight is not running."
+        case .controllerUnavailable: return "FnLightSwitch is not running."
         }
     }
 }
@@ -106,9 +106,9 @@ struct DecreaseXDRBoostIntent: AppIntent {
 }
 
 /// Pre-canned Shortcuts that appear automatically in the Shortcuts app once
-/// FnSwitchLight has been launched at least once.
+/// FnLightSwitch has been launched at least once.
 @available(macOS 13.0, *)
-struct FnSwitchLightAppShortcuts: AppShortcutsProvider {
+struct FnLightSwitchAppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: ToggleXDRBoostIntent(),

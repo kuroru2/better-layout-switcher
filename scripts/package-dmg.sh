@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Create FnSwitchLight DMG with app + Applications symlink
+# Create FnLightSwitch DMG with app + Applications symlink
 # Can be run locally or in CI
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-APP_NAME="FnSwitchLight"
+APP_NAME="FnLightSwitch"
 APP_DIR="$PROJECT_DIR/build/$APP_NAME.app"
-DMG_NAME="FnSwitchLight-macOS.dmg"
+DMG_NAME="FnLightSwitch-macOS.dmg"
 DMG_PATH="$PROJECT_DIR/$DMG_NAME"
 
 # Build .app if it doesn't exist
